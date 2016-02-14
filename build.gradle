@@ -1,0 +1,83 @@
+apply plugin: 'groovy'
+apply plugin: 'cobertura'
+
+group = 'net.gleske'
+jar.baseName = 'libtemplate'
+archivesBaseName = 'libtemplate'
+version = '0.1.0-SNAPSHOT'
+
+apply from: 'file:gradle/groovydoc.gradle'
+
+ext.groovyVersion = System.getenv('GROOVY_VERSION')?: '2.4.5'
+
+println "Using Groovy ${groovyVersion}"
+println "Using Gradle ${GradleVersion.current().getVersion()}"
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'net.saliman:gradle-cobertura-plugin:2.2.6'
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+dependencies {
+    compile "org.codehaus.groovy:groovy-all:${groovyVersion}"
+    testCompile 'junit:junit:4.11'
+}
+
+test {
+  // show standard out and standard error of the test JVM(s) on the console
+  testLogging.showStandardStreams = true
+
+  // set heap size for the test JVM(s)
+  minHeapSize = '128m'
+  maxHeapSize = '512m'
+
+  // set JVM arguments for the test JVM(s)
+  jvmArgs '-XX:MaxPermSize=256m'
+
+  // listen to events in the test execution lifecycle
+  beforeTest { descriptor ->
+     logger.lifecycle('Running test: ' + descriptor)
+  }
+
+  // listen to standard out and standard error of the test JVM(s)
+  onOutput { descriptor, event ->
+     logger.lifecycle('Test: ' + descriptor + ' produced standard out/err: ' + event.message )
+  }
+}
+
+//http://jdpgrailsdev.github.io/blog/2014/04/29/gradle_cobertura.html
+//https://github.com/stevesaliman/gradle-cobertura-plugin/blob/master/usage.md
+cobertura {
+    //fix cobertura version
+    //https://github.com/stevesaliman/gradle-cobertura-plugin/issues/72
+    //coberturaVersion = '2.1.1'
+    //coberturaVersion = '2.0.3'
+    coverageFormats = ['html', 'xml']
+    coverageIgnoreTrivial = true
+    coverageIgnores = ['org.slf4j.Logger.*']
+    coverageExcludes = ['.*package-info.*', 'net\\.gleske\\.jervis\\.exceptions\\..*']
+
+    //coberturaCheck values 80% (./gradlew coberturaCheck test)
+    //coverageCheckBranchRate = 80
+    //coverageCheckLineRate = 80
+    coverageCheckPackageBranchRate = 50
+    coverageCheckPackageLineRate = 80
+    coverageCheckTotalBranchRate = 50
+    coverageCheckTotalLineRate = 80
+    coverageCheckHaltOnFailure = true
+
+}
+test.finalizedBy(project.tasks.cobertura)
+
+//http://www.gradle.org/docs/current/userguide/gradle_wrapper.html
+//generate gradlew with: gradle wrapper
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.8'
+}
