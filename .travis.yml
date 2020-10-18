@@ -4,4 +4,4 @@ install: true
 script: ./test.sh
 branches:
   only:
-    - master
+    - main
